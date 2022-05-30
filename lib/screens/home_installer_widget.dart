@@ -276,58 +276,72 @@ class _HomeInstallerState extends State<HomeInstaller> {
                                             itemBuilder: (context, index){
                                               return Row(
                                                 children: [
-                                                  Text(
-                                                    "\$ ${calculatePrice(
-                                                        simulatedPos,
-                                                        LatLng(request[index].lat, request[index].lng),
-                                                        "2.5"
-                                                    )}",
-                                                    style: priceBig,
+                                                  Container(
+                                                    width: 20.0.w,
+                                                    child: FittedBox(
+                                                      fit: BoxFit.scaleDown,
+                                                      child: Text(
+                                                        "\$ ${calculatePrice(
+                                                            simulatedPos,
+                                                            LatLng(request[index].lat, request[index].lng),
+                                                            "2.5"
+                                                        )}",
+                                                        style: priceBig,
+                                                      ),
+                                                    ),
                                                   ),
-                                                  RichText(
-                                                      textAlign:TextAlign.start,
-                                                      text: TextSpan(
-                                                          text: "\t\t\t\t Nome do Usuario \n",
-                                                          style: infoColPanel,
-                                                          children: [
-                                                            TextSpan(
-                                                                text:
-                                                                planProvider.plans.isNotEmpty
-                                                                    ?  "\t\t\t\t\t ${planProvider.plans[index].isp} |  ${planProvider.plans[index].data_capacity} GB"
-                                                                    :   "\t\t\t\t\t Loading...",
-                                                                style: dataExpPanel
-                                                            )
-                                                          ]
-                                                      )
+                                                  Container(
+                                                    width: 40.0.w,
+                                                    child: FittedBox(
+                                                      fit: BoxFit.scaleDown,
+                                                      child: RichText(
+                                                          textAlign:TextAlign.start,
+                                                          text: TextSpan(
+                                                              text: "Nome do Usuario \n",
+                                                              style: infoColPanel,
+                                                              children: [
+                                                                TextSpan(
+                                                                    text:
+                                                                    planProvider.plans.isNotEmpty
+                                                                        ?  "${planProvider.plans[index].isp} |  ${planProvider.plans[index].data_capacity} GB"
+                                                                        :   "Loading...",
+                                                                    style: dataExpPanel
+                                                                )
+                                                              ]
+                                                          )
+                                                      ),
+                                                    ),
                                                   ),
-                                                  SizedBox(width: 10.0.w,),
-                                                  Row(
-                                                    children: [
-                                                      IconButton(
-                                                          onPressed: ()=>{
-                                                            setState((){
-                                                              _createPolylines(simulatedPos.latitude,simulatedPos.longitude, request[index].lat,request[index].lng);
-                                                              onRequest = true;
-                                                              selected = request[index];
-                                                              markers.add(
-                                                                  Marker(
-                                                                      markerId: MarkerId("Destination"),
-                                                                      position: LatLng(request[index].lat,request[index].lng),
-                                                                      icon: BitmapDescriptor.defaultMarker
-                                                                  )
-                                                              );
-                                                            }),
-                                                            _panelController.hide()
-                                                          },
-                                                          icon: Icon(Icons.check, color: Colors.teal,size: 7.0.w,)),
-                                                      IconButton(
-                                                          onPressed: ()=>{
-                                                            setState((){
-                                                              repository.deleteRequest(request[index]);
-                                                            })
-                                                          },
-                                                          icon: Icon(Icons.close, color: Colors.red,size: 7.0.w,)),
-                                                    ],
+                                                  SizedBox(width: 4.0.w,),
+                                                  Expanded(
+                                                    child: Row(
+                                                      children: [
+                                                        IconButton(
+                                                            onPressed: ()=>{
+                                                              setState((){
+                                                                _createPolylines(simulatedPos.latitude,simulatedPos.longitude, request[index].lat,request[index].lng);
+                                                                onRequest = true;
+                                                                selected = request[index];
+                                                                markers.add(
+                                                                    Marker(
+                                                                        markerId: MarkerId("Destination"),
+                                                                        position: LatLng(request[index].lat,request[index].lng),
+                                                                        icon: BitmapDescriptor.defaultMarker
+                                                                    )
+                                                                );
+                                                              }),
+                                                              _panelController.hide()
+                                                            },
+                                                            icon: Icon(Icons.check, color: Colors.teal,size: 7.0.w,)),
+                                                        IconButton(
+                                                            onPressed: ()=>{
+                                                              setState((){
+                                                                repository.deleteRequest(request[index]);
+                                                              })
+                                                            },
+                                                            icon: Icon(Icons.close, color: Colors.red,size: 7.0.w,)),
+                                                      ],
+                                                    ),
                                                   ),
                                                 ],
                                               );
