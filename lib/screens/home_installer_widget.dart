@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_sliding_up_panel/sliding_up_panel_widget.dart';
+import 'package:flutter_zoom_drawer/config.dart';
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:fullscreen/fullscreen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -39,6 +42,8 @@ class _HomeInstallerState extends State<HomeInstaller> {
   late RequestInstaller selected;
   late Set<Marker> markers = Set();
   late PolylinePoints polylinePoints;
+  final ZoomDrawerController _drawerController = ZoomDrawerController();
+
 
   // List of coordinates to join
   List<LatLng> polylineCoordinates = [];
@@ -143,248 +148,390 @@ class _HomeInstallerState extends State<HomeInstaller> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Color(0xFF0D1724),
-        body: ChangeNotifierProvider<LocationProvider>(
-          create: (_) => LocationProvider(),
-          builder: (context, snapshot){
-            final locationProvider = Provider.of<LocationProvider>(context);
-            if(locationProvider.status == LocationProviderStatus.Initial)
-              locationProvider.getLocation();
-            if(locationProvider.status == LocationProviderStatus.Error){
-              return Center(
-                child: Text(
-                  "An Error Occurs",
-                  style: infoColPanel,
-                ),
-              );
-            }
-            else if(locationProvider.status == LocationProviderStatus.Loading ||
-                locationProvider.status == LocationProviderStatus.Initial){
-              return Container(
-                width: double.maxFinite,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+        body: ZoomDrawer(
+          controller: _drawerController,
+          openCurve: Curves.fastOutSlowIn,
+          style: DrawerStyle.defaultStyle,
+          showShadow: false,
+          slideWidth: 65.0.w,
+          angle: 0.0,
+          mainScreenTapClose: true,
+          disableDragGesture: true,
+          mainScreen: ChangeNotifierProvider<LocationProvider>(
+            create: (_) => LocationProvider(),
+            builder: (context, snapshot){
+              final locationProvider = Provider.of<LocationProvider>(context);
+              if(locationProvider.status == LocationProviderStatus.Initial)
+                locationProvider.getLocation();
+              if(locationProvider.status == LocationProviderStatus.Error){
+                return Center(
+                  child: Text(
+                    "An Error Occurs",
+                    style: infoColPanel,
+                  ),
+                );
+              }
+              else if(locationProvider.status == LocationProviderStatus.Loading ||
+                  locationProvider.status == LocationProviderStatus.Initial){
+                return Container(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      Text(
+                        "Get Location",
+                        style: infoColPanel,
+                      ),
+                    ],
+                  ),
+                );
+              }
+              else {
+                return Stack(
                   children: [
-                    CircularProgressIndicator(),
-                    Text(
-                      "Get Location",
-                      style: infoColPanel,
+                    GoogleMap(
+                      onMapCreated: _onMapCreated,
+                      //Enabled on Real Application
+                      //myLocationEnabled: true,
+                      markers: markers,
+                      polylines: Set<Polyline>.of(polylines.values),
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      initialCameraPosition: CameraPosition(
+                        target: simulatedPos,
+                        zoom: 5.0,
+                      ),
                     ),
-                  ],
-                ),
-              );
-            }
-            else {
-              return Stack(
-                children: [
-                  GoogleMap(
-                    onMapCreated: _onMapCreated,
-                    //Enabled on Real Application
-                    //myLocationEnabled: true,
-                    markers: markers,
-                    polylines: Set<Polyline>.of(polylines.values),
-                    myLocationButtonEnabled: false,
-                    zoomControlsEnabled: false,
-                    initialCameraPosition: CameraPosition(
-                      target: simulatedPos,
-                      zoom: 5.0,
-                    ),
-                  ),
 
-                  // Menu Button
-                  Positioned(
-                    top: 5.0.h,
-                    left: 5.0.w,
-                    right: 80.0.w,
-                    child: TextButton(
-                        style: TextButton.styleFrom(
-                          primary: Colors.white,
-                          backgroundColor: Colors.black.withOpacity(0.95),
-                          onSurface: Colors.grey,
-                          shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(10))
-                          ),
-                        ),
-                        onPressed: () => print("click"),
-                        child: Container(
-                          height: 5.0.h,
-                          child: const Center(
-                            child: Icon(
-                                Icons.menu
-                            ),
-                          ),
-                        )
-                    ),
-                  ),
-
-                  Positioned(
-                      top: request.isNotEmpty?20.0.h:50.0.h,
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: SlidingUpPanelWidget(
-                        panelController: _panelController,
-                        controlHeight: 30.0.h,
-                        anchor: 1,
-                        child: Container(
-                          padding: EdgeInsets.only(left: 7.0.w,top: 5.0.h),
-                          decoration: const BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                topRight: Radius.circular(20),
-                              )
-                          ),
-                          child: ChangeNotifierProvider<PlanProvider>(
-                            create: (_) => PlanProvider(),
-                            child: Column(
-                              children: [
-                                StreamBuilder<QuerySnapshot>(
-                                    stream: repository.getStream(),
-                                    builder: (context, snapshot){
-                                      request = [];
-                                      final planProvider = Provider.of<PlanProvider>(context);
-                                      snapshot.data?.docChanges.forEach((obj) {
-                                        if(obj.doc.get("installerId") == 37) {
-                                          RequestInstaller requests = RequestInstaller.fromSnapshot(obj.doc);
-                                          request.add(requests);
-
-                                          fetchPlansId(requests.planId.toString())
-                                              .then((value) => {
-                                            planProvider.setPlan(value)
-                                          });
-                                        }
-                                      });
-                                      return request.isNotEmpty?
-                                      ListView.separated(
-                                          itemCount: request.length,
-                                          shrinkWrap: true,
-                                          itemBuilder: (context, index){
-                                            return Row(
-                                              children: [
-                                                Text(
-                                                  "\$ ${calculatePrice(
-                                                      simulatedPos,
-                                                      LatLng(request[index].lat, request[index].lng),
-                                                      "2.5"
-                                                  )}",
-                                                  style: priceBig,
-                                                ),
-                                                RichText(
-                                                    textAlign:TextAlign.start,
-                                                    text: TextSpan(
-                                                        text: "\t\t\t\t Nome do Usuario \n",
-                                                        style: infoColPanel,
-                                                        children: [
-                                                          TextSpan(
-                                                              text:
-                                                              planProvider.plans.isNotEmpty
-                                                                  ?  "\t\t\t\t\t ${planProvider.plans[index].isp} |  ${planProvider.plans[index].data_capacity} GB"
-                                                                  :   "\t\t\t\t\t Loading...",
-                                                              style: dataExpPanel
-                                                          )
-                                                        ]
-                                                    )
-                                                ),
-                                                SizedBox(width: 10.0.w,),
-                                                Row(
-                                                  children: [
-                                                    IconButton(
-                                                        onPressed: ()=>{
-                                                          setState((){
-                                                            _createPolylines(simulatedPos.latitude,simulatedPos.longitude, request[index].lat,request[index].lng);
-                                                            onRequest = true;
-                                                            selected = request[index];
-                                                            markers.add(
-                                                                Marker(
-                                                                    markerId: MarkerId("Destination"),
-                                                                    position: LatLng(request[index].lat,request[index].lng),
-                                                                    icon: BitmapDescriptor.defaultMarker
-                                                                )
-                                                            );
-                                                          }),
-                                                          _panelController.hide()
-                                                        },
-                                                        icon: Icon(Icons.check, color: Colors.teal,size: 7.0.w,)),
-                                                    IconButton(
-                                                        onPressed: ()=>{
-                                                          setState((){
-                                                            repository.deleteRequest(request[index]);
-                                                          })
-                                                        },
-                                                        icon: Icon(Icons.close, color: Colors.red,size: 7.0.w,)),
-                                                  ],
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                          separatorBuilder: (context, int){
-                                            return Divider(
-                                              color: Colors.white.withOpacity(0.3),
-                                            );
-                                          }
-                                      ):
-                                      Center(
-                                        child: Text(
-                                            "Without Requests",
-                                            style: infoColPanel
-                                        ),
-                                      );
-                                    }
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
-                  ),
-
-                  Visibility(
-                    visible: onRequest,
-                    child: Positioned(
-                      bottom: 2.0.h,
+                    // Menu Button
+                    Positioned(
+                      top: 5.0.h,
                       left: 5.0.w,
-                      right: 5.0.w,
+                      right: 80.0.w,
                       child: TextButton(
                           style: TextButton.styleFrom(
                             primary: Colors.white,
-                            backgroundColor: Colors.black,
+                            backgroundColor: Colors.black.withOpacity(0.95),
                             onSurface: Colors.grey,
                             shape: const RoundedRectangleBorder(
                                 borderRadius: BorderRadius.all(Radius.circular(10))
                             ),
                           ),
-                          onPressed: () async {
-                            _panelController.collapse();
-                            setState((){
-                              polylines = {};
-                              onRequest = false;
-                              repository.deleteRequest(selected);
-                              markers.remove(markers.elementAt(1));
-                              CameraUpdate.newCameraPosition(
-                                  CameraPosition(
-                                      target: simulatedPos,
-                                      zoom: 15
-                                  )
-                              );
-                            });
-                          },
+                          onPressed: () => _drawerController.open!(),
                           child: Container(
                             height: 5.0.h,
-                            child: Center(
-                              child: Text(
-                                "Done",
-                                style: button,
+                            child: const Center(
+                              child: Icon(
+                                  Icons.menu
                               ),
                             ),
                           )
                       ),
                     ),
-                  )
-                ],
-              );
-            }
-          },
+
+                    Positioned(
+                        top: request.isNotEmpty?20.0.h:50.0.h,
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: SlidingUpPanelWidget(
+                          panelController: _panelController,
+                          controlHeight: 30.0.h,
+                          anchor: 1,
+                          child: Container(
+                            padding: EdgeInsets.only(left: 7.0.w,top: 5.0.h),
+                            decoration: const BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                )
+                            ),
+                            child: ChangeNotifierProvider<PlanProvider>(
+                              create: (_) => PlanProvider(),
+                              child: Column(
+                                children: [
+                                  StreamBuilder<QuerySnapshot>(
+                                      stream: repository.getStream(),
+                                      builder: (context, snapshot){
+                                        request = [];
+                                        final planProvider = Provider.of<PlanProvider>(context);
+                                        snapshot.data?.docChanges.forEach((obj) {
+                                          if(obj.doc.get("installerId") == 37) {
+                                            RequestInstaller requests = RequestInstaller.fromSnapshot(obj.doc);
+                                            request.add(requests);
+
+                                            fetchPlansId(requests.planId.toString())
+                                                .then((value) => {
+                                              planProvider.setPlan(value)
+                                            });
+                                          }
+                                        });
+                                        return request.isNotEmpty?
+                                        ListView.separated(
+                                            itemCount: request.length,
+                                            shrinkWrap: true,
+                                            itemBuilder: (context, index){
+                                              return Row(
+                                                children: [
+                                                  Text(
+                                                    "\$ ${calculatePrice(
+                                                        simulatedPos,
+                                                        LatLng(request[index].lat, request[index].lng),
+                                                        "2.5"
+                                                    )}",
+                                                    style: priceBig,
+                                                  ),
+                                                  RichText(
+                                                      textAlign:TextAlign.start,
+                                                      text: TextSpan(
+                                                          text: "\t\t\t\t Nome do Usuario \n",
+                                                          style: infoColPanel,
+                                                          children: [
+                                                            TextSpan(
+                                                                text:
+                                                                planProvider.plans.isNotEmpty
+                                                                    ?  "\t\t\t\t\t ${planProvider.plans[index].isp} |  ${planProvider.plans[index].data_capacity} GB"
+                                                                    :   "\t\t\t\t\t Loading...",
+                                                                style: dataExpPanel
+                                                            )
+                                                          ]
+                                                      )
+                                                  ),
+                                                  SizedBox(width: 10.0.w,),
+                                                  Row(
+                                                    children: [
+                                                      IconButton(
+                                                          onPressed: ()=>{
+                                                            setState((){
+                                                              _createPolylines(simulatedPos.latitude,simulatedPos.longitude, request[index].lat,request[index].lng);
+                                                              onRequest = true;
+                                                              selected = request[index];
+                                                              markers.add(
+                                                                  Marker(
+                                                                      markerId: MarkerId("Destination"),
+                                                                      position: LatLng(request[index].lat,request[index].lng),
+                                                                      icon: BitmapDescriptor.defaultMarker
+                                                                  )
+                                                              );
+                                                            }),
+                                                            _panelController.hide()
+                                                          },
+                                                          icon: Icon(Icons.check, color: Colors.teal,size: 7.0.w,)),
+                                                      IconButton(
+                                                          onPressed: ()=>{
+                                                            setState((){
+                                                              repository.deleteRequest(request[index]);
+                                                            })
+                                                          },
+                                                          icon: Icon(Icons.close, color: Colors.red,size: 7.0.w,)),
+                                                    ],
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                            separatorBuilder: (context, int){
+                                              return Divider(
+                                                color: Colors.white.withOpacity(0.3),
+                                              );
+                                            }
+                                        ):
+                                        Center(
+                                          child: Text(
+                                              "Without Requests",
+                                              style: infoColPanel
+                                          ),
+                                        );
+                                      }
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                    ),
+
+                    Visibility(
+                      visible: onRequest,
+                      child: Positioned(
+                        bottom: 2.0.h,
+                        left: 5.0.w,
+                        right: 5.0.w,
+                        child: TextButton(
+                            style: TextButton.styleFrom(
+                              primary: Colors.white,
+                              backgroundColor: Colors.black,
+                              onSurface: Colors.grey,
+                              shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(10))
+                              ),
+                            ),
+                            onPressed: () async {
+                              _panelController.collapse();
+                              setState((){
+                                polylines = {};
+                                onRequest = false;
+                                repository.deleteRequest(selected);
+                                markers.remove(markers.elementAt(1));
+                                CameraUpdate.newCameraPosition(
+                                    CameraPosition(
+                                        target: simulatedPos,
+                                        zoom: 15
+                                    )
+                                );
+                              });
+                            },
+                            child: Container(
+                              height: 5.0.h,
+                              child: Center(
+                                child: Text(
+                                  "Done",
+                                  style: button,
+                                ),
+                              ),
+                            )
+                        ),
+                      ),
+                    )
+                  ],
+                );
+              }
+            },
+          ),
+          menuScreen: Padding(
+            padding: EdgeInsets.only(left: 2.0.w, top: 12.0.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment(-0.9,0),
+                  child: Container(
+                    width: 25.0.w,
+                    height: 25.0.w,
+                    decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.5),
+                        shape: BoxShape.circle
+                    ),
+                  ),
+                ),
+                SizedBox(height: 2.0.h,),
+                Align(
+                  alignment: Alignment(-0.8,0),
+                  child: Text(
+                    "Nome Installer",
+                    style: infoColPanel,
+                  ),
+                ),
+                SizedBox(height: 5.0.h,),
+                TextButton(
+                  onPressed: (){},
+                  style: TextButton.styleFrom(
+                      primary: Colors.white
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.house_alt_fill,
+                      ),
+                      SizedBox(width: 5.0.w,),
+                      Text(
+                        "Home",
+                      )
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: (){},
+                  style: TextButton.styleFrom(
+                      primary: Colors.white
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.money_dollar,
+                      ),
+                      SizedBox(width: 5.0.w,),
+                      Text(
+                        "Balance",
+                      )
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: (){},
+                  style: TextButton.styleFrom(
+                      primary: Colors.white
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.calendar,
+                      ),
+                      SizedBox(width: 5.0.w,),
+                      Text(
+                        "History",
+                      )
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: (){},
+                  style: TextButton.styleFrom(
+                      primary: Colors.white
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.profile_circled,
+                      ),
+                      SizedBox(width: 5.0.w,),
+                      Text(
+                        "Profile",
+                      )
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: (){},
+                  style: TextButton.styleFrom(
+                      primary: Colors.white
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        CupertinoIcons.question,
+                      ),
+                      SizedBox(width: 5.0.w,),
+                      const Text(
+                        "Help",
+                      )
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Align(
+                      alignment: Alignment(-0.9,0),
+                      child: TextButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10)),
+                            ),
+                            primary: Colors.white,
+                            side: BorderSide(color: Colors.white),
+                            padding: EdgeInsets.symmetric(horizontal: 5.0.w)
+                        ),
+                        child: const Text(
+                          "Log Out",
+                        ),
+                      )
+                  ),
+                ),
+              ],
+            ),
+          ),
         )
     );
   }
