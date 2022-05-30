@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "374459486225",
+    "project_id": "inatel-app-challenge",
+    "storage_bucket": "inatel-app-challenge.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:374459486225:android:cb6f75fcfd0d6288a4e1b0",
+        "android_client_info": {
+          "package_name": "com.example.inatel_app_challenge"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "374459486225-ckov7cda9sj3sv7koiolo6um7ejb2phr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcrteVdTT7LbOGNuBNDUqWPNXacGwapPA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "374459486225-ckov7cda9sj3sv7koiolo6um7ejb2phr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
