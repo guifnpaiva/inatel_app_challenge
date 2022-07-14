@@ -4,7 +4,7 @@ Esse foi um aplicativo que desenvolvi durante o Inatel App Challange 2k22, um Ha
 
 OBS: O App foi populado por um banco de dados disponível para o evento, e pode não estar mais disponível no momento do acesso.
 
-![Home Screen](https://drive.google.com/file/d/1TyU8mFZgI_tQx6qT7Mfsj34vuWkoVwFM/view?usp=sharing)   ![Provider Select](https://drive.google.com/file/d/1Mwl5g9zvQ6J_0gElMdYxO0VIqrBeTWyR/view?usp=sharing)
-![Installer Select](https://drive.google.com/file/d/1JUsZ1q3zhv3Otq0m7sMR7vBlUF3DPyfE/view?usp=sharing) ![Successfull](https://drive.google.com/file/d/1-bbs-6GxX3kcBd2h8N35WrZ4lcUqo4X2/view?usp=sharing)
+![Home Screen](https://drive.google.com/uc?export=view&id=1TyU8mFZgI_tQx6qT7Mfsj34vuWkoVwFM)   ![Provider Select](https://drive.google.com/uc?export=view&id=1Mwl5g9zvQ6J_0gElMdYxO0VIqrBeTWyR)
+![Installer Select](https://drive.google.com/uc?export=view&id=1JUsZ1q3zhv3Otq0m7sMR7vBlUF3DPyfE) ![Successfull](https://drive.google.com/uc?export=view&id=1-bbs-6GxX3kcBd2h8N35WrZ4lcUqo4X2)
 
-![Menu](https://drive.google.com/file/d/1laUdEQgt69WwCcq0rqQ1F8gG0txhzohN/view?usp=sharing)
+![Menu](https://drive.google.com/uc?export=view&id=1laUdEQgt69WwCcq0rqQ1F8gG0txhzohN)
